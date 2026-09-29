@@ -14,28 +14,18 @@ async function getShipmentByToken(req, res) {
   const events = await TrackingEvent.find({
     shipment: shipment._id,
     isVisibleToCustomer: true,
-  }).sort({ timestamp: -1 }); // reverse chronological — newest first, for the public view
+  }).sort({ timestamp: -1 });
 
   res.json({ shipment, events });
 }
 
-// GET /track/number/:trackingNumber — alternative lookup, requires last name for verification
+// GET /track/number/:trackingNumber — lookup by tracking number alone, no name required
 async function getShipmentByNumber(req, res) {
-  const { lastName } = req.query;
-  if (!lastName) {
-    return res.status(400).json({ error: 'lastName query parameter is required for verification' });
-  }
-
   const shipment = await Shipment.findOne({ trackingNumber: req.params.trackingNumber })
     .populate('recipient');
 
   if (!shipment) {
     return res.status(404).json({ error: 'Shipment not found' });
-  }
-
-  const recipientLastName = shipment.recipient.fullName.trim().split(' ').pop().toLowerCase();
-  if (recipientLastName !== lastName.trim().toLowerCase()) {
-    return res.status(403).json({ error: 'Verification failed' });
   }
 
   const events = await TrackingEvent.find({
@@ -48,7 +38,7 @@ async function getShipmentByNumber(req, res) {
 
 // POST /track/:trackingLinkToken/subscribe — opt-in to notifications
 async function subscribeToUpdates(req, res) {
-  const { channel, contact } = req.body; // channel: 'email' | 'sms'
+  const { channel, contact } = req.body;
 
   if (!channel || !contact || !['email', 'sms'].includes(channel)) {
     return res.status(400).json({ error: 'channel ("email" or "sms") and contact are required' });
@@ -59,7 +49,6 @@ async function subscribeToUpdates(req, res) {
     return res.status(404).json({ error: 'Tracking link not found' });
   }
 
-  // Update recipient's contact info if they provided a different one for this channel
   if (channel === 'email') shipment.recipient.email = contact;
   if (channel === 'sms') shipment.recipient.phone = contact;
 
@@ -68,7 +57,7 @@ async function subscribeToUpdates(req, res) {
     channel,
     triggerStatus: shipment.currentStatus,
     sentAt: new Date(),
-    success: true, // placeholder — real sending happens in Phase 5 (email/SMS service)
+    success: true,
   });
 
   res.json({ message: `Subscribed to ${channel} updates for this shipment.` });
