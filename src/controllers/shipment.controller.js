@@ -48,7 +48,13 @@ async function createShipment(req, res) {
   await TrackingEvent.create({
     shipment: shipment._id,
     status: 'order_created',
-    location: { city: origin.city, state: origin.state, country: origin.country },
+    location: {
+      city: origin.city,
+      state: origin.state,
+      country: origin.country,
+      lat: origin.lat,
+      lng: origin.lng,
+    },
     description: 'Shipment created and label generated.',
     source: 'system',
     createdBy: req.user.id,
@@ -95,7 +101,6 @@ async function getShipmentDetail(req, res) {
   res.json({ shipment, events });
 }
 
-// PATCH /admin/shipments/:id — edit shipment metadata (now includes waypoints)
 async function updateShipment(req, res) {
   const shipment = await Shipment.findById(req.params.id);
   if (!shipment) return res.status(404).json({ error: 'Shipment not found' });
