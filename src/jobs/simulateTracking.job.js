@@ -29,7 +29,12 @@ async function tick(io) {
     const event = await TrackingEvent.create({
       shipment: shipment._id,
       status: next,
-      location: { city: shipment.destination.city, country: shipment.destination.country },
+      location: {
+        city: shipment.destination.city,
+        country: shipment.destination.country,
+        lat: shipment.destination.lat,
+        lng: shipment.destination.lng,
+      },
       description: `Automated update: package status advanced to "${next.replace(/_/g, ' ')}".`,
       source: 'automated',
       createdBy: null,
